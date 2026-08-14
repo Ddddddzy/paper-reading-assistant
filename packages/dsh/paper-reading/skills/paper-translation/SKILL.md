@@ -25,13 +25,27 @@ description: Use when the user asks to translate an English PDF paper into Chine
 - Python 3.8+ 与 pymupdf：`python -m pip install -r "<脚本目录>/requirements.txt"`
 - XeLaTeX + ctex（TeX Live）
 
+## 硬性纪律（违反即视为流程错误）
+
+1. **extract / preprocess / crop-figures / cache-save / assemble 只允许各执行一条对应脚本命令**；禁止用多轮 shell 手搓版面、dump bbox、矢量分析、手工裁图替代脚本。
+2. **禁止为「通读全文」而反复 Read 整个 `prepared.json`**（尤其禁止按 2000 行切片读完上千段）。翻译时只读**当前分块文件**或当前需要的段落子集。
+3. **无视觉能力时禁止调用 read_image / 读图工具**（会立刻报错且浪费步骤）；插图一律 `crop-figures` 一次出图后直接引用。
+4. **pymupdf 不可用时**：允许**一次** poppler 兜底（`pdftotext`/`pdfimages`/`pdftoppm`）生成等价 `extracted.json`；仍禁止深度版面逆向。
+5. 使用子代理时：每个子代理**只读自己的 chunk 文件、只写自己的结果文件**；主代理禁止再通读全文 JSON。
+6. 模型只负责：翻译空段、公式文本→LaTeX、中文图题/章节归纳、精读笔记、术语入库；其余确定性步骤交给脚本。
+
 ## 流程
 1. 建文件夹并导入：新建 `<slug>/`，把原文 PDF 复制为 `<slug>/<slug>.pdf`。
-2. 抽取：`python "<脚本目录>/translate_pdf.py" extract <slug>/<slug>.pdf -o <slug>/translation` → 生成 `extracted.json`、`pages/`（每页渲染 PNG）、`images/`（内嵌位图）。
-3. 预处理（脚本化加速，必做）：`python "<脚本目录>/translate_pdf.py" preprocess <slug>/translation/extracted.json --terms <cwd>/paper-kb/terms.json -o <slug>/translation` → 生成 `prepared.json`：已切段、英文术语已预替换为「中文(English)」占位、公式段已标记、参考文献已抽取、术语对照已生成、已译段落从 `cache.json` 自动复用。
-4. 翻译：读取 `prepared.json`，**只翻译 `translated` 为空且 `is_formula=false` 的段**（用 `prepped` 文本，译名已定，直接沿用「中文(English)」里的中文）；`is_formula=true` 的段转录为 LaTeX 公式块；插图先跑 `crop-figures` 脚本化裁剪出 `figures/fig-N.png` 并直接引用（pymupdf 坐标：get_image_rects + 文本块 bbox + get_pixmap(clip)），不要对无视觉能力的会话使用读图工具；识别章节组织成 chapters；写回 `translated`，并整理成 `translated.json`（`references`/`glossary` 直接取自 prepared.json）。
-5. 缓存：`python "<脚本目录>/translate_pdf.py" cache-save <slug>/translation/prepared.json -o <slug>/translation` → 把已译段落写入 `cache.json`（下次重跑自动复用，跳过已译段）。
-6. 汇编编译：`python "<脚本目录>/translate_pdf.py" assemble <slug>/translation/translated.json -o <slug>/translation` → 生成 `paper.tex` 并运行 xelatex 两遍 → `<slug>/translation/paper.pdf`。
+2. 抽取（仅脚本）：`python "<脚本目录>/translate_pdf.py" extract <slug>/<slug>.pdf -o <slug>/translation` → `extracted.json`、`pages/`、`images/`。成功即进入下一步，不要额外探测。
+3. 预处理（仅脚本）：`python "<脚本目录>/translate_pdf.py" preprocess <slug>/translation/extracted.json --terms <cwd>/paper-kb/terms.json -o <slug>/translation` → `prepared.json`。
+4. 插图（仅脚本，一次）：`python "<脚本目录>/translate_pdf.py" crop-figures <slug>/<slug>.pdf -o <slug>/translation` → `figures/`。裁坏的图最多再跑**一次**脚本或按用户指定图号重裁；禁止多轮坐标 dump。
+5. 翻译（模型，按块）：
+   - 用脚本或少量命令把待译段切成 `translation/chunks/chunk-XX.json`（每块几十段即可）。
+   - **只翻译 `translated` 为空且 `is_formula=false` 的段**（用 `prepped`）；`is_formula=true` 转 LaTeX 公式块。
+   - 主代理/子代理每次只处理一个 chunk；合并为 `translated.json`（`references`/`glossary` 取自 prepared；插图引用 `figures/fig-N.png` + 中文 caption）。
+   - 识别章节组织成 chapters；精读笔记在合并阶段写一次即可。
+6. 缓存（仅脚本）：`python "<脚本目录>/translate_pdf.py" cache-save <slug>/translation/prepared.json -o <slug>/translation`（若 cache-save 需已填入译文的 prepared/翻译结果，按脚本实际参数为准；把已译段落写入 `cache.json`）。
+7. 汇编（仅脚本）：`python "<脚本目录>/translate_pdf.py" assemble <slug>/translation/translated.json -o <slug>/translation` → `paper.tex` → xelatex 两遍 → `paper.pdf`。
 
 ## 输出要求（全中文论文格式）
 - ctex 文档类；正文宋体、标题黑体（ctex 默认处理）。
