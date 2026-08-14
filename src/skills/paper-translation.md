@@ -45,14 +45,15 @@ description: Use when the user asks to translate an English PDF paper into Chine
    - 主代理/子代理每次只处理一个 chunk；合并为 `translated.json`（`references`/`glossary` 取自 prepared；插图引用 `figures/fig-N.png` + 中文 caption）。
    - 识别章节组织成 chapters；精读笔记在合并阶段写一次即可。
 6. 缓存（仅脚本）：`python "<脚本目录>/translate_pdf.py" cache-save <slug>/translation/prepared.json -o <slug>/translation`（若 cache-save 需已填入译文的 prepared/翻译结果，按脚本实际参数为准；把已译段落写入 `cache.json`）。
-7. 汇编（仅脚本）：`python "<脚本目录>/translate_pdf.py" assemble <slug>/translation/translated.json -o <slug>/translation` → `paper.tex` → xelatex 两遍 → `paper.pdf`。
+7. 汇编（仅脚本）：`python "<脚本目录>/translate_pdf.py" assemble <slug>/translation/translated.json -o <slug>/translation`（在工作区根目录执行，或加 `--cwd <工作区根>`）。若 `paper-reading.config.yml` 配置了 `latex_template`，**必须**使用该模板生成 `paper.tex`（文件缺失则失败）；未配置则用内置模板。→ xelatex 两遍 → `paper.pdf`。
 
 ## 输出要求（全中文论文格式）
-- ctex 文档类；正文宋体、标题黑体（ctex 默认处理）。
-- 每大章 `\clearpage` 分页。
+- 默认：ctex 文档类；正文宋体、标题黑体（ctex 默认处理）。
+- 若配置了自定义 `latex_template`：版式以该模板为准；模板须含 `{{body}}`，可选 `{{title}}` `{{authors}}` `{{glossary}}` `{{notes}}` `{{references}}`。
+- 每大章 `\clearpage` 分页（由正文块生成；模板可自行调整章节命令，但占位内容仍按章节块填入）。
 - **全中文正文，按英文段落分段，不并列英文原文**。
 - 公式自动编号（equation 环境）；插图 figure 环境 + 中文 caption。
-- 文末附：术语对照表、结构化精读笔记、参考文献。
+- 文末附：术语对照表、结构化精读笔记、参考文献（可由模板占位符承接，或自动并入 `{{body}}` 末尾）。
 
 ## 术语规范（单源：paper-kb/terms.json）
 - 翻译前先读取根目录 `paper-kb/terms.json`；不存在则先 `python "<脚本目录>/kb.py" --root <cwd>/paper-kb init`。

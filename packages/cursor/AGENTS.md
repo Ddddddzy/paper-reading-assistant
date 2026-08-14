@@ -39,7 +39,7 @@
 
 ### 6. 翻译任务（用户要求翻译 PDF 文献）
 - 加载 paper-translation 技能并**严格按其流程与硬性纪律**执行。
-- 产出：LaTeX 编译的**全中文** PDF（ctex 中文论文格式，每大章分页），按英文段落分段、**不做中英并列**；含术语对照表、结构化精读笔记、参考文献提取，公式与插图正常插入。
+- 产出：LaTeX 编译的**全中文** PDF。未配置模板时用内置 ctex 版式；若 `paper-reading.config.yml` 设置了 `latex_template`（工作区根目录相对路径），汇编**必须**使用该模板（见 paper-translation 技能）。
 - 目录：每篇论文一个 `<slug>/` 文件夹（原文 PDF + `translation/` 归档），知识库在根目录 `paper-kb/`。
 - 术语翻译遵循第 1 节的规范（以 paper-kb/terms.json 为准）。
 - **效率红线**：禁止通读整份 `prepared.json`；禁止用读图工具做插图定位；extract/preprocess/crop-figures/assemble 各只跑对应脚本，不要手搓版面。

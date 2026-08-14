@@ -94,6 +94,11 @@ write(path.join(outDsh, "skills", "knowledge-base", "SKILL.md"), kb);
 write(path.join(outDsh, "skills", "paper-translation", "SKILL.md"), trans);
 copyDir(scriptsSrc, path.join(outDsh, "scripts"));
 write(path.join(outDsh, "config.example.yml"), config);
+const templatesSrc = path.join(src, "templates");
+if (fs.existsSync(templatesSrc)) {
+  copyDir(templatesSrc, path.join(outCursor, "templates"));
+  copyDir(templatesSrc, path.join(outDsh, "templates"));
+}
 
 console.log("packed:");
 console.log("  " + path.relative(root, outCursor));

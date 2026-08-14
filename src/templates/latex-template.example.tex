@@ -1,0 +1,31 @@
+% 论文译文 LaTeX 模板示例
+% 复制到工作区根目录（例如 latex-template.tex），并在 paper-reading.config.yml 中设置：
+%   latex_template: latex-template.tex
+%
+% 必填占位符：{{body}}
+% 可选：{{title}} {{authors}} {{glossary}} {{notes}} {{references}}
+% 编译时工作目录为 <slug>/translation/，插图路径使用 figures/... 等相对路径。
+
+\documentclass[12pt]{ctexart}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs,array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\setlength{\parskip}{0.6em}
+
+\begin{document}
+\title{{{title}}}
+\author{{{authors}}}
+\date{}
+\maketitle
+
+{{body}}
+
+% 若下面三行保留占位符，附录由模板单独排版；若删除占位符，脚本会把对应内容并入 {{body}} 末尾。
+{{glossary}}
+{{notes}}
+{{references}}
+
+\end{document}

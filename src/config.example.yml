@@ -18,3 +18,9 @@ journals:
 textbooks:
   - Bertsekas, Dynamic Programming and Optimal Control
   - Rawlings & Mayne, Model Predictive Control: Theory and Design
+
+# LaTeX 译文模板（可选）：相对工作区根目录的路径。
+# 设置后 assemble 必须使用该文件（不存在则报错）；留空则用内置 ctex 模板。
+# 模板必填占位符 {{body}}；可选 {{title}} {{authors}} {{glossary}} {{notes}} {{references}}。
+# 示例文件见仓库 src/templates/latex-template.example.tex
+latex_template: ""

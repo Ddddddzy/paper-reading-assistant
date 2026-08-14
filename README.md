@@ -114,6 +114,7 @@ npm run pack
 | `seed_terms` | 术语种子 JSON 路径，供 `kb.py init --seed` 使用 |
 | `journals` | 论文推荐时的刊物/会议名单 |
 | `textbooks` | 名词解释时的权威教材参考 |
+| `latex_template` | 译文 LaTeX 模板路径（相对工作区根目录）。设置后 `assemble` 必须使用该文件；留空则用内置模板。必填占位符 `{{body}}`，可选 `{{title}}` `{{authors}}` `{{glossary}}` `{{notes}}` `{{references}}`。示例：`src/templates/latex-template.example.tex` |
 
 模板见 `src/config.example.yml`。
 

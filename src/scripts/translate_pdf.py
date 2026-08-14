@@ -9,7 +9,11 @@
   crop-figures <pdf> -o <outdir>        程序化裁剪插图（get_image_rects + 文本块 bbox + get_pixmap(clip)）-> figures/
   preprocess <extracted.json> -o <outdir> 切段/术语预替换/公式标记/参考文献/术语对照/增量缓存 -> prepared.json
   cache-save <prepared.json> -o <outdir> 把 prepared.json 里已译段落写入 cache.json
-  assemble <translated.json> -o <outdir> 由翻译结果生成 paper.tex 并编译为 paper.pdf
+  assemble <translated.json> -o <outdir> [--template PATH] [--cwd DIR]
+      由翻译结果生成 paper.tex 并编译为 paper.pdf。
+      若工作区 paper-reading.config.yml 配置了 latex_template（或传入 --template），
+      则必须使用该模板（文件不存在则报错）；模板需含 {{body}}，可选
+      {{title}} {{authors}} {{glossary}} {{notes}} {{references}}。
 
 translated.json schema（assemble 的输入，由翻译阶段产出）：
 {
@@ -282,7 +286,70 @@ def render_block(b):
     return ""
 
 
-def build_tex(data):
+def build_body_sections(data):
+    """章节正文（不含导言区 / maketitle）。"""
+    L = []
+    for i, ch in enumerate(data.get("chapters", [])):
+        heading = ch.get("heading", "第%d章" % (i + 1))
+        L.append(r"\clearpage")
+        L.append(r"\section*{" + esc_text(heading) + "}")
+        L.append(r"\addcontentsline{toc}{section}{" + esc_text(heading) + "}")
+        for b in ch.get("blocks", []):
+            L.append(render_block(b))
+    return "\n".join(L)
+
+
+def build_glossary_tex(data):
+    gl = data.get("glossary", [])
+    if not gl:
+        return ""
+    L = [
+        r"\clearpage",
+        r"\section*{术语对照表}",
+        r"\begin{tabular}{lll}",
+        r"\toprule 英文 & 中文 & 领域 \\ \midrule",
+    ]
+    for g in gl:
+        L.append(
+            esc_text(g.get("en", "")) + " & " + esc_text(g.get("cn", ""))
+            + " & " + esc_text(g.get("field", "")) + r" \\"
+        )
+    L.append(r"\bottomrule")
+    L.append(r"\end{tabular}")
+    return "\n".join(L)
+
+
+def build_notes_tex(data):
+    notes = data.get("notes", {})
+    if not notes:
+        return ""
+    L = [r"\clearpage", r"\section*{结构化精读笔记}"]
+    for key, label in [
+        ("problem", "研究问题"),
+        ("method", "方法"),
+        ("contribution", "贡献"),
+        ("experiments", "实验"),
+        ("limitations", "局限"),
+    ]:
+        v = notes.get(key)
+        if v:
+            L.append(r"\subsection*{" + label + "}")
+            L.append(esc_with_math(v))
+    return "\n".join(L)
+
+
+def build_references_tex(data):
+    refs = data.get("references", [])
+    if not refs:
+        return ""
+    L = [r"\clearpage", r"\section*{参考文献}", r"\begin{enumerate}"]
+    for r in refs:
+        L.append(r"\item " + esc_text(r))
+    L.append(r"\end{enumerate}")
+    return "\n".join(L)
+
+
+def build_default_tex(data):
     L = []
     L.append(r"\documentclass[12pt]{ctexart}")
     L.append(r"\usepackage[margin=2.5cm]{geometry}")
@@ -298,51 +365,82 @@ def build_tex(data):
     L.append(r"\date{}")
     L.append(r"\maketitle")
     L.append("")
-    for i, ch in enumerate(data.get("chapters", [])):
-        heading = ch.get("heading", "第%d章" % (i + 1))
-        L.append(r"\clearpage")
-        L.append(r"\section*{" + esc_text(heading) + "}")
-        L.append(r"\addcontentsline{toc}{section}{" + esc_text(heading) + "}")
-        for b in ch.get("blocks", []):
-            L.append(render_block(b))
-    gl = data.get("glossary", [])
-    if gl:
-        L.append(r"\clearpage")
-        L.append(r"\section*{术语对照表}")
-        L.append(r"\begin{tabular}{lll}")
-        L.append(r"\toprule 英文 & 中文 & 领域 \\ \midrule")
-        for g in gl:
-            L.append(
-                esc_text(g.get("en", "")) + " & " + esc_text(g.get("cn", ""))
-                + " & " + esc_text(g.get("field", "")) + r" \\"
-            )
-        L.append(r"\bottomrule")
-        L.append(r"\end{tabular}")
-    notes = data.get("notes", {})
-    if notes:
-        L.append(r"\clearpage")
-        L.append(r"\section*{结构化精读笔记}")
-        for key, label in [
-            ("problem", "研究问题"),
-            ("method", "方法"),
-            ("contribution", "贡献"),
-            ("experiments", "实验"),
-            ("limitations", "局限"),
-        ]:
-            v = notes.get(key)
-            if v:
-                L.append(r"\subsection*{" + label + "}")
-                L.append(esc_with_math(v))
-    refs = data.get("references", [])
-    if refs:
-        L.append(r"\clearpage")
-        L.append(r"\section*{参考文献}")
-        L.append(r"\begin{enumerate}")
-        for r in refs:
-            L.append(r"\item " + esc_text(r))
-        L.append(r"\end{enumerate}")
+    L.append(build_body_sections(data))
+    L.append(build_glossary_tex(data))
+    L.append(build_notes_tex(data))
+    L.append(build_references_tex(data))
     L.append(r"\end{document}")
     return "\n".join(L)
+
+
+def read_config_latex_template(cwd=None):
+    """从工作区 paper-reading.config.yml 读取 latex_template 字段（无 PyYAML 依赖）。"""
+    cwd = cwd or os.getcwd()
+    path = os.path.join(cwd, "paper-reading.config.yml")
+    if not os.path.exists(path):
+        return ""
+    with open(path, encoding="utf-8-sig") as f:
+        text = f.read()
+    m = re.search(r"(?m)^\s*latex_template\s*:\s*[\"']?([^\"'#\n]+?)[\"']?\s*(?:#.*)?$", text)
+    if not m:
+        return ""
+    return m.group(1).strip()
+
+
+def resolve_template_path(explicit=None, cwd=None):
+    """
+    解析模板路径。优先级：命令行 --template > config latex_template。
+    配置了路径但文件不存在 → 报错（必须使用用户模板）。
+    未配置 → 返回 None（使用内置模板）。
+    """
+    cwd = cwd or os.getcwd()
+    raw = (explicit or "").strip() or read_config_latex_template(cwd)
+    if not raw:
+        return None
+    path = raw if os.path.isabs(raw) else os.path.join(cwd, raw)
+    path = os.path.normpath(path)
+    if not os.path.isfile(path):
+        sys.exit("已配置 latex_template=%s，但文件不存在：%s（工作区根目录相对路径）" % (raw, path))
+    return path
+
+
+def apply_latex_template(template_text, data):
+    """用占位符填充用户模板。必须含 {{body}}。"""
+    if "{{body}}" not in template_text:
+        sys.exit("LaTeX 模板缺少必填占位符 {{body}}")
+    body = build_body_sections(data)
+    # 若模板未单独留 glossary/notes/references 占位，则并入 body 末尾（与内置行为一致）
+    extras = []
+    if "{{glossary}}" not in template_text:
+        extras.append(build_glossary_tex(data))
+    if "{{notes}}" not in template_text:
+        extras.append(build_notes_tex(data))
+    if "{{references}}" not in template_text:
+        extras.append(build_references_tex(data))
+    if extras:
+        body = body + "\n" + "\n".join(x for x in extras if x)
+
+    repl = {
+        "{{title}}": esc_text(data.get("title", "")),
+        "{{authors}}": esc_text(data.get("authors", "")),
+        "{{body}}": body,
+        "{{glossary}}": build_glossary_tex(data),
+        "{{notes}}": build_notes_tex(data),
+        "{{references}}": build_references_tex(data),
+    }
+    out = template_text
+    for k, v in repl.items():
+        out = out.replace(k, v)
+    return out
+
+
+def build_tex(data, template_path=None):
+    if template_path:
+        with open(template_path, encoding="utf-8-sig") as f:
+            tpl = f.read()
+        print("使用 LaTeX 模板 -> " + template_path)
+        return apply_latex_template(tpl, data)
+    return build_default_tex(data)
 
 
 def cmd_assemble(args):
@@ -350,7 +448,9 @@ def cmd_assemble(args):
         data = json.load(f)
     outdir = args.outdir
     os.makedirs(outdir, exist_ok=True)
-    tex = build_tex(data)
+    cwd = args.cwd or os.getcwd()
+    template_path = resolve_template_path(getattr(args, "template", None), cwd=cwd)
+    tex = build_tex(data, template_path=template_path)
     texpath = os.path.join(outdir, "paper.tex")
     with open(texpath, "w", encoding="utf-8") as f:
         f.write(tex)
@@ -514,6 +614,16 @@ def main():
     a = sp.add_parser("assemble", help="由 translated.json 生成并编译 PDF")
     a.add_argument("translated_json")
     a.add_argument("-o", "--outdir", default="out")
+    a.add_argument(
+        "--template",
+        default=None,
+        help="LaTeX 模板路径（默认读工作区 paper-reading.config.yml 的 latex_template）",
+    )
+    a.add_argument(
+        "--cwd",
+        default=None,
+        help="工作区根目录（用于解析 config 与相对模板路径，默认当前目录）",
+    )
     args = p.parse_args()
     if args.cmd == "extract":
         cmd_extract(args)
