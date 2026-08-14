@@ -5,3 +5,4 @@ paper-kb/
 .paper-reader-cache/
 node_modules/
 .DS_Store
+paper-reading.config.yml

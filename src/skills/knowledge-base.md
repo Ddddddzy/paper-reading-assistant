@@ -5,9 +5,17 @@ description: Use when adding, updating, or querying the term knowledge base and 
 
 # 知识库与知识图谱（paper-kb）
 
-术语知识库 + 知识图谱，长期累积，位于会话工作目录（cwd，即 agent 的 working directory）下的 `paper-kb\` 文件夹。
+术语知识库 + 知识图谱，长期累积，位于会话工作目录（cwd）下的 `paper-kb/` 文件夹。
 
-脚本目录：`C:\Users\Lenovo\.dsh\.agent-presets\paper-reading\scripts\`（若预设目录被移动，请同步改此路径）。
+## 脚本目录
+
+运行 `kb.py` 前先定位「脚本目录」，按下面顺序取第一个存在的路径：
+
+1. 与 `skills/` 同级的 `scripts/`（DeepSeek Harness 预设安装位置）
+2. 本技能目录内的 `scripts/`（Cursor 技能包）
+3. 工作区根目录的 `scripts/`
+
+示例：`python "<脚本目录>/kb.py" --root <cwd>/paper-kb init`
 
 ## 结构
 - `terms.json`：术语条目数组（术语源）。
@@ -36,15 +44,15 @@ description: Use when adding, updating, or querying the term knowledge base and 
 - **本文件是翻译与名词解释共享的唯一术语源**：翻译锁定译名、名词解释写定义，都读写这一份 terms.json。
 
 ## 流程
-1. 初始化：若 `paper-kb\` 不存在，运行 `python "<脚本目录>\kb.py" --root <cwd>\paper-kb init`。
+1. 初始化：若 `paper-kb/` 不存在，运行 `python "<脚本目录>/kb.py" --root <cwd>/paper-kb init`。
 2. 新增/更新术语：
-   - `read` 读 `terms.json`；按 `english` 或 `aliases` 去重。
+   - 读取 `terms.json`；按 `english` 或 `aliases` 去重。
    - 命中：更新 definition、追加 sources/mentions、补 aliases。
    - 未命中：追加新条目。
    - 写回 `terms.json`。
 3. 记录论文：把涉及论文写入 `papers.json`（title/authors/year/venue/abstract/key terms）。
-4. 生成图谱：`python "<脚本目录>\kb.py" --root <cwd>\paper-kb graph` → 重写 `graph.mmd`（节点=术语/论文，边=来源/提及/别名）。
+4. 生成图谱：`python "<脚本目录>/kb.py" --root <cwd>/paper-kb graph` → 重写 `graph.mmd`（节点=术语/论文，边=来源/提及/别名）。
 5. 可视化：若装有 mermaid-cli，`kb.py graph --render` 额外生成 SVG；否则把 `graph.mmd` 粘贴到在线 Mermaid 渲染器查看。
 
 ## 查询
-回答名词解释时：先 `grep`/`read` `paper-kb\terms.json`（含 aliases），命中则引用已有定义；未命中则联网检索并随后写入。
+回答名词解释时：先检索 `paper-kb/terms.json`（含 aliases），命中则引用已有定义；未命中则联网检索并随后写入。

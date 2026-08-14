@@ -1,0 +1,8 @@
+{
+  "name": "paper-reading-assistant",
+  "private": true,
+  "description": "Academic paper-reading preset for Cursor and DeepSeek Harness, generated from a shared src/",
+  "scripts": {
+    "pack": "node scripts/pack.mjs"
+  }
+}
