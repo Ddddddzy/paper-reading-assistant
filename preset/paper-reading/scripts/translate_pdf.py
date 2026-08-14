@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-自控论文 PDF -> 中文 LaTeX/PDF 翻译流水线工具。
+论文 PDF -> 中文 LaTeX/PDF 翻译流水线工具。
 
 抽取使用 pymupdf（fitz）。
 
@@ -494,7 +494,7 @@ def cmd_crop_figures(args):
 
 
 def main():
-    p = argparse.ArgumentParser(description="自控论文 PDF 翻译流水线（pymupdf 抽取 + xelatex 编译）")
+    p = argparse.ArgumentParser(description="论文 PDF 翻译流水线（pymupdf 抽取 + xelatex 编译）")
     sp = p.add_subparsers(dest="cmd", required=True)
     e = sp.add_parser("extract", help="抽取 PDF 文本与图片（pymupdf）")
     e.add_argument("pdf")

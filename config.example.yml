@@ -1,0 +1,20 @@
+# 论文阅读助手 · 领域配置（用户自定义）
+# 复制为「工作目录下的 paper-reading.config.yml」并按需修改；领域相关行为一律以此为准。
+
+field: 自动控制                       # 研究领域（中文名）
+field_en: Automatic Control           # 领域英文名
+subfield: 最优控制与模型预测控制       # 重点子方向（可选）
+
+# 术语种子（可选）：kb.py init --seed 用它初始化 paper-kb/terms.json；留空则从空表开始
+seed_terms: ""
+
+# 论文推荐时的权威刊物/会议（可选）
+journals:
+  - IEEE Transactions on Automatic Control
+  - Automatica
+  - SIAM Journal on Control and Optimization
+
+# 名词解释时的权威教材/参考（可选）
+textbooks:
+  - Bertsekas, Dynamic Programming and Optimal Control
+  - Rawlings & Mayne, Model Predictive Control: Theory and Design

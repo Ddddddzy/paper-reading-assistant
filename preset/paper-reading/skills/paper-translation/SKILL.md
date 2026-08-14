@@ -1,6 +1,6 @@
 ---
 name: paper-translation
-description: Use when the user asks to translate an English PDF paper into Chinese, or to produce a Chinese reading version of a PDF — the PDF → LaTeX → PDF translation pipeline for control-theory papers.
+description: Use when the user asks to translate an English PDF paper into Chinese, or to produce a Chinese reading version of a PDF — the PDF → LaTeX → PDF translation pipeline for academic papers.
 ---
 
 # Paper Translation（PDF → 全中文 LaTeX/PDF）

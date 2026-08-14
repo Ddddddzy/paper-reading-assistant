@@ -16,19 +16,20 @@ import os
 import subprocess
 
 
-def seed_terms():
-    seed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "seed_terms.json")
+def seed_terms(seed_path=None):
+    if not seed_path:
+        seed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "seed_terms.json")
     if os.path.exists(seed_path):
         with open(seed_path, encoding="utf-8-sig") as f:
             return json.load(f)
     return []
 
 
-def init_kb(root):
+def init_kb(root, seed=None):
     os.makedirs(root, exist_ok=True)
     tp = os.path.join(root, "terms.json")
     if not os.path.exists(tp):
-        terms = seed_terms()
+        terms = seed_terms(seed)
         with open(tp, "w", encoding="utf-8") as f:
             json.dump(terms, f, ensure_ascii=False, indent=2)
         print("已从种子表生成 terms.json（%d 条）" % len(terms))
@@ -134,7 +135,8 @@ def main():
     p = argparse.ArgumentParser(description="paper-kb 知识库工具")
     p.add_argument("--root", default=None, help="paper-kb 目录；默认 <cwd>/paper-kb")
     sp = p.add_subparsers(dest="cmd", required=True)
-    sp.add_parser("init")
+    i = sp.add_parser("init")
+    i.add_argument("--seed", default=None, help="自定义术语种子 JSON 文件路径")
     g = sp.add_parser("graph")
     g.add_argument("--render", action="store_true")
     t = sp.add_parser("term")
@@ -144,7 +146,7 @@ def main():
     args = p.parse_args()
     root = args.root or os.path.join(os.getcwd(), "paper-kb")
     if args.cmd == "init":
-        init_kb(root)
+        init_kb(root, args.seed)
     elif args.cmd == "graph":
         cmd_graph(args)
     elif args.cmd == "term":

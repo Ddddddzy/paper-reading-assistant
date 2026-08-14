@@ -20,7 +20,7 @@ description: Use when adding, updating, or querying the term knowledge base and 
 {
   "term": "状态反馈",
   "english": "state feedback",
-  "field": "线性系统理论 / 最优控制",
+  "field": "示例领域",
   "aliases": ["状态回授"],
   "preferred_zh": "状态反馈",
   "definition": "...",
