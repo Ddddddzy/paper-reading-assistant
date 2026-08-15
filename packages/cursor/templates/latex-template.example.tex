@@ -2,8 +2,8 @@
 % 复制到工作区根目录（例如 latex-template.tex），并在 paper-reading.config.yml 中设置：
 %   latex_template: latex-template.tex
 %
-% 必填占位符：{{body}}
-% 可选：{{title}} {{authors}} {{glossary}} {{notes}} {{references}}
+% 必填占位符：正文 body（双花括号）；可选 title / authors / glossary / notes / references。
+% 注意：注释中不要写字面双花括号占位符，否则 assemble 全局替换时会破坏注释。
 % 编译时工作目录为 <slug>/translation/，插图路径使用 figures/... 等相对路径。
 
 \documentclass[12pt]{ctexart}
@@ -23,7 +23,7 @@
 
 {{body}}
 
-% 若下面三行保留占位符，附录由模板单独排版；若删除占位符，脚本会把对应内容并入 {{body}} 末尾。
+% 若保留下列附录占位符，由模板单独排版；若删除，脚本会把对应内容并入正文末尾。
 {{glossary}}
 {{notes}}
 {{references}}

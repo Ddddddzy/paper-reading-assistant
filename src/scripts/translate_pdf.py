@@ -40,6 +40,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -443,6 +444,26 @@ def build_tex(data, template_path=None):
     return build_default_tex(data)
 
 
+def copy_template_assets(template_path, outdir):
+    """把模板同目录的 .cls/.sty 等依赖复制到编译目录（如 bithesis.cls）。"""
+    if not template_path:
+        return
+    src_dir = os.path.dirname(os.path.abspath(template_path))
+    if not os.path.isdir(src_dir):
+        return
+    exts = {".cls", ".sty", ".bst", ".clo", ".cfg"}
+    for name in os.listdir(src_dir):
+        src = os.path.join(src_dir, name)
+        if not os.path.isfile(src):
+            continue
+        ext = os.path.splitext(name)[1].lower()
+        if ext not in exts and name.lower() != "latexmkrc":
+            continue
+        dst = os.path.join(outdir, name)
+        shutil.copy2(src, dst)
+        print("已复制模板依赖 -> " + dst)
+
+
 def cmd_assemble(args):
     with open(args.translated_json, encoding="utf-8-sig") as f:
         data = json.load(f)
@@ -450,6 +471,7 @@ def cmd_assemble(args):
     os.makedirs(outdir, exist_ok=True)
     cwd = args.cwd or os.getcwd()
     template_path = resolve_template_path(getattr(args, "template", None), cwd=cwd)
+    copy_template_assets(template_path, outdir)
     tex = build_tex(data, template_path=template_path)
     texpath = os.path.join(outdir, "paper.tex")
     with open(texpath, "w", encoding="utf-8") as f:
